@@ -22,11 +22,17 @@
   },
   "homepage": "https://github.com/AegisX438/appsec-lab-app-a#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
     "pg": "^8.16.3",
     "pino": "^10.1.0",
-    "pino-http": "^11.0.0"
+    "pino-http": "^11.0.0",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
