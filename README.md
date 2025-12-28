@@ -1,194 +1,226 @@
 # appsec-lab-app-a
 
-A security-focused Node.js application demonstrating authentication, authorization, and secure API practices with PostgreSQL backend.
+A security-focused Node.js application designed as a **learning and testing lab** for application security (AppSec) and penetration testing concepts.
+
+This project intentionally mirrors real-world backend architectures (auth, RBAC, ownership, sessions) so that security vulnerabilities can be **introduced, exploited, fixed, and regression-tested** in a controlled environment.
+
+---
 
 ## Overview
 
-This is a sample application built with Express.js that includes:
-- **Authentication**: Session-based user authentication with password hashing (bcrypt)
-- **Authorization**: Role-based access control (RBAC) for managing user permissions
-- **Security Headers**: Helmet.js for HTTP security headers
-- **Rate Limiting**: Express rate limiting to prevent abuse
-- **Database**: PostgreSQL with connection pooling
-- **Logging**: Structured logging with Pino
-- **Input Validation**: Zod for schema validation
+This application is built with Express.js and PostgreSQL and focuses on **backend security fundamentals**, not UI.
+
+It is intended to be used as:
+- A personal AppSec / pentesting lab
+- A regression-testing playground for access control issues
+- A backend-only target for API security testing
+
+---
+
+## Key Security Concepts Demonstrated
+
+- Session-based authentication
+- Role-Based Access Control (RBAC)
+- Ownership-based authorization (IDOR prevention)
+- Rate limiting & account lockout
+- Secure password storage (bcrypt)
+- Input validation (Zod)
+- Security headers (Helmet)
+- Deterministic test environment with Docker
+- Authorization regression testing (CI-friendly)
+
+---
 
 ## Features
 
-- User authentication and session management
-- Role-based access control (Admin, User roles)
+### Authentication
+- Session-based login/logout
+- Password hashing with bcrypt
+- Account lockout after repeated failures
+- `/me` endpoint for session validation
+
+### Authorization
+- RBAC (`admin`, `user`)
+- Admin-only endpoints
+- Ownership checks on business entities (orders)
+
+### Business Logic
 - Order management system
-- Database migrations
-- Docker support for containerized deployment
-- Comprehensive security middleware
+- Orders belong to a specific user
+- Admin can access all orders
+- Regular users can access **only their own** orders
+
+### Security Tooling
+- Rate limiting on authentication endpoints
+- HTTP security headers via Helmet
+- Correlation ID support for request tracing
+- Authorization test suite to prevent regressions
+
+---
 
 ## Technology Stack
 
-- **Runtime**: Node.js
-- **Web Framework**: Express.js
-- **Database**: PostgreSQL
-- **Session Store**: PostgreSQL (connect-pg-simple)
-- **Security**:
-  - Helmet for HTTP headers
-  - bcrypt for password hashing
+- **Runtime:** Node.js 20+
+- **Framework:** Express.js
+- **Database:** PostgreSQL
+- **Session Store:** PostgreSQL (`connect-pg-simple`)
+- **Security:**
+  - Helmet
+  - bcrypt
   - Rate limiting
-- **Logging**: Pino with HTTP middleware
-- **Validation**: Zod
-- **Development**: Nodemon
+- **Validation:** Zod
+- **Logging:** Console-based (correlation ID support)
+- **Containerization:** Docker & Docker Compose
+
+---
 
 ## Project Structure
 
-```
 ├── src/
-│   ├── admin.js          # Admin-related endpoints
-│   ├── auth.js           # Authentication logic
-│   ├── db.js             # Database connection and pool
-│   ├── logger.js         # Logging configuration
-│   ├── orders.js         # Order management endpoints
-│   ├── rbac.js           # Role-based access control
-│   ├── routes.js         # Public routes
-│   └── server.js         # Express application setup
+│   ├── admin.js            # Admin-only endpoints
+│   ├── auth.js             # Authentication logic
+│   ├── db.js               # Database connection pool
+│   ├── orders.js           # Order endpoints + ownership checks
+│   ├── rbac.js             # Role-based access control helpers
+│   ├── routes.js           # Public routes
+│   └── server.js           # Express app setup
+│
 ├── scripts/
-│   ├── migrate.sql       # Base database schema migration
-│   ├── migrate-auth.sql  # Authentication schema migration
-│   ├── migrate-orders.sql # Orders schema migration
-│   ├── authz-test.sh     # Authorization testing script
-│   ├── seed.js           # Database seeding script
-│   └── run-sql.js        # SQL execution utility
-├── docker-compose.yml    # Docker compose configuration
-├── Dockerfile            # Container image definition
-├── package.json          # Node dependencies
-└── README.md             # This file
-```
+│   ├── migrate.sql         # Base schema
+│   ├── migrate-auth.sql    # Auth tables
+│   ├── migrate-orders.sql  # Orders schema
+│   ├── seed.js             # Seed users and data
+│   ├── authz-test.sh       # Authorization test suite
+│
+├── docker-compose.yml
+├── Dockerfile
+├── .env.example
+├── .env.ci
+├── package.json
+└── README.md
+
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 20+ or Docker
-- PostgreSQL 12+
-- npm or yarn
+- Node.js 20+ **or** Docker
+- PostgreSQL (local) **or** Docker
+- npm
 
-### Installation
+---
 
-1. Clone the repository:
-```bash
-git clone https://github.com/AegisX438/appsec-lab-app-a.git
-cd appsec-lab-app-a
-```
+## Environment Configuration
 
-2. Install dependencies:
-```bash
-npm install
-```
+Create a local `.env` file from the example:
 
-3. Create a `.env` file with database credentials:
-```env
+cp .env.example .env
+
+Example variables:
+
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=appsec_lab
 DB_USER=postgres
 DB_PASSWORD=your_password
+
 APP_NAME=app-a
 PORT=3001
 NODE_ENV=development
-```
 
-### Running the Application
+.env.ci is used only for CI environments and contains non-sensitive defaults.
 
-**Development mode:**
-```bash
-npm run dev
-```
+⸻
 
-**Production mode:**
-```bash
-npm start
-```
+Running the Application
 
-**With Docker:**
-```bash
-docker-compose up
-```
+Local (Node.js)
 
-### Database Setup
-
-Run migrations to set up the database schema:
-```bash
+npm install
 npm run migrate:base
 npm run migrate:auth
-```
-
-Seed the database with sample data:
-```bash
+npm run migrate:orders
 npm run seed
-```
+npm run dev
 
-### Testing Authorization
+With Docker
 
-Run the authorization test script:
-```bash
+docker-compose up --build
+
+
+⸻
+
+API Endpoints
+
+Health
+
+GET /health
+
+Authentication
+
+POST /auth/login
+POST /auth/logout
+GET  /me
+
+Orders
+
+POST /orders
+GET  /orders
+GET  /orders/:id
+
+Admin (RBAC protected)
+
+GET   /admin/users
+PATCH /admin/users/:id/role
+
+
+⸻
+
+Authorization Testing
+
+This project includes an authorization regression test suite that verifies:
+	•	Guest vs user vs admin access
+	•	RBAC enforcement
+	•	Ownership-based access control (IDOR prevention)
+
+Run it with:
+
 npm run authz
-```
 
-## API Endpoints
+The test suite is designed to fail if:
+	•	An endpoint becomes unintentionally accessible
+	•	Ownership checks are broken
+	•	RBAC rules regress
 
-### Health Check
-- `GET /health` - Health check endpoint with database status
+⸻
 
-### Authentication
-- `POST /login` - User login
-- `POST /logout` - User logout
-- `GET /me` - Get current user info
+Intended Usage
 
-### Orders
-- `GET /orders` - List user's orders
-- `POST /orders` - Create new order
-- `GET /orders/:id` - Get order details
+This project is not a production app.
 
-### Admin
-- `GET /admin/users` - List all users (admin only)
-- `GET /admin/orders` - List all orders (admin only)
+It is intentionally designed to:
+	•	Learn AppSec concepts
+	•	Practice pentesting techniques
+	•	Safely introduce and fix vulnerabilities
+	•	Validate security fixes with automated tests
 
-## Security Features
+⸻
 
-- **HTTPS Headers**: Helmet middleware for security headers
-- **Password Hashing**: bcrypt with salt rounds
-- **Rate Limiting**: Configured rate limits on authentication endpoints
-- **CORS**: Configurable cross-origin requests
-- **Input Validation**: Zod schema validation
-- **Session Security**: Secure session storage in PostgreSQL
-- **Correlation IDs**: Request tracing across logs
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DB_HOST` | PostgreSQL host | localhost |
-| `DB_PORT` | PostgreSQL port | 5432 |
-| `DB_NAME` | Database name | appsec_lab |
-| `DB_USER` | Database user | postgres |
-| `DB_PASSWORD` | Database password | - |
-| `APP_NAME` | Application identifier | app-a |
-| `PORT` | Server port | 3001 |
-| `NODE_ENV` | Environment | development |
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
+License
 
 ISC
 
-## Author
+⸻
 
-[Your Name/Organization]
+Author
 
-## Bugs
+Maintained for personal learning and security research.
 
-Report bugs at: https://github.com/AegisX438/appsec-lab-app-a/issues
+⸻
+
+Bugs / Issues
+
+If you find inconsistencies or issues, feel free to open an issue:
+
+https://github.com/AegisX438/appsec-lab-app-a/issues
