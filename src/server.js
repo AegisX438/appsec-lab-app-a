@@ -5,6 +5,8 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const session = require("express-session");
 const PgSession = require("connect-pg-simple")(session);
+const { adminRouter } = require("./admin");
+const { requireRole } = require("./rbac");
 
 const { logger } = require("./logger");
 const { pool } = require("./db");
@@ -75,6 +77,7 @@ const loginLimiter = rateLimit({
 });
 
 // Auth routes
+app.use("/admin", requireRole(["admin"]), adminRouter);
 app.post("/auth/login", loginLimiter, (req, res, next) => {
     Promise.resolve(login(req, res)).catch(next);
 });
