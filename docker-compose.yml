@@ -1,0 +1,17 @@
+services:
+  app-a:
+    build: .
+    container_name: appsec_app_a
+    env_file:
+      - .env
+    networks:
+      - infra_app_net
+      - infra_data_net
+    expose:
+      - "3001"
+
+networks:
+  infra_app_net:
+    external: true
+  infra_data_net:
+    external: true
