@@ -8,7 +8,9 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "seed": "node scripts/seed.js",
-    "authz": "./scripts/authz-test.sh"
+    "authz": "./scripts/authz-test.sh",
+    "migrate:base": "node scripts/run-sql.js scripts/migrate.sql",
+    "migrate:auth": "node scripts/run-sql.js scripts/migrate-auth.sql"
   },
   "repository": {
     "type": "git",

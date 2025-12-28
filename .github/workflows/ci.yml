@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  authz:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: appsec
+          POSTGRES_PASSWORD: appsec
+          POSTGRES_DB: appsec
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U appsec -d appsec"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Load CI env
+        run: cp .env.ci .env
+
+      - name: Migrate DB
+        run: |
+          npm run migrate:base
+          npm run migrate:auth
+
+      - name: Seed users
+        run: npm run seed
+
+      - name: Start app
+        run: |
+          nohup npm start > app.log 2>&1 &
+          echo $! > app.pid
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/health || true)
+            if [ "$code" = "200" ]; then
+              echo "OK: app is healthy"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "FAIL: app did not become healthy"
+          echo "---- app.log ----"
+          tail -n 200 app.log || true
+          exit 1
+
+      - name: Run authz tests
+        env:
+          BASE_URL: http://127.0.0.1:3001
+          PASS: ChangeMe123!
+        run: npm run authz
+
+      - name: Stop app
+        if: always()
+        run: |
+          if [ -f app.pid ]; then kill $(cat app.pid) || true; fi
+          tail -n 200 app.log || true
