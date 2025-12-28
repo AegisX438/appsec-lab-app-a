@@ -12,6 +12,7 @@ const { logger } = require("./logger");
 const { pool } = require("./db");
 const { router } = require("./routes");
 const { login, logout, me, requireAuth } = require("./auth");
+const { ordersRouter } = require("./orders");
 
 const app = express();
 
@@ -83,6 +84,8 @@ app.post("/auth/login", loginLimiter, (req, res, next) => {
 });
 app.post("/auth/logout", (req, res) => logout(req, res));
 app.get("/me", requireAuth, (req, res) => me(req, res));
+
+app.use("/orders", ordersRouter);
 
 // Existing routes
 app.use(router);

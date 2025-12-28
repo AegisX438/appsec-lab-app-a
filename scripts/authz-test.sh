@@ -86,3 +86,24 @@ if [ "$FAILS" -gt 0 ]; then
   exit 1
 fi
 echo "== RESULT: PASS =="
+
+# IDOR test setup:
+# user creates an order
+order_id=$(curl -sk -b "$USER_JAR" -H "Content-Type: application/json" \
+  -d '{"item":"CI-Test","amount":1}' \
+  "$BASE_URL/orders" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.order?.id||''));}catch(e){process.stdout.write('');}})")
+
+if [ -z "$order_id" ]; then
+  echo "FAIL: could not create order for IDOR test"
+  FAILS=$((FAILS+1))
+else
+  # create a second user session (user2)
+  USER2_JAR="$TMPDIR/user2.txt"
+  login "$USER2_JAR" "user2"
+
+  c=$(req_code "$USER2_JAR" GET "/orders/$order_id")
+  expect "user2 GET /orders/:id (should be 403, prevent IDOR)" "$c" "403" || FAILS=$((FAILS+1))
+
+  c=$(req_code "$ADMIN_JAR" GET "/orders/$order_id")
+  expect "admin GET /orders/:id (should be 200)" "$c" "200" || FAILS=$((FAILS+1))
+fi
